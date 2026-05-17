@@ -32,34 +32,52 @@ jobs:
   android_apk:
     name: Android APK
     runs-on: ubuntu-latest
-    if: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check Firebase Android secret
+        id: check_secret
+        run: |
+          if [ -n "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" ]; then
+            echo "has_secret=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secret=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip APK build when secret is missing
+        if: steps.check_secret.outputs.has_secret != 'true'
+        run: echo "ANDROID_GOOGLE_SERVICES_JSON_B64 is missing. APK build skipped."
+
       - name: Setup Java
+        if: steps.check_secret.outputs.has_secret == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Setup Flutter
+        if: steps.check_secret.outputs.has_secret == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
       - name: Generate flutter scaffolding and install deps
+        if: steps.check_secret.outputs.has_secret == 'true'
         run: bash scripts/bootstrap_project.sh
 
       - name: Inject google-services.json
+        if: steps.check_secret.outputs.has_secret == 'true'
         run: |
           mkdir -p android/app
           echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" | base64 --decode > android/app/google-services.json
 
       - name: Build release APK
+        if: steps.check_secret.outputs.has_secret == 'true'
         run: flutter build apk --release
 
       - name: Prepare APK artifact
+        if: steps.check_secret.outputs.has_secret == 'true'
         run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/ghostchat-app-${{ github.run_number }}.apk"
@@ -67,6 +85,7 @@ jobs:
           zip "ghostchat-android-${{ github.run_number }}.zip" "ghostchat-app-${{ github.run_number }}.apk"
 
       - name: Upload APK artifact
+        if: steps.check_secret.outputs.has_secret == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ghostchat-android-${{ github.run_number }}
