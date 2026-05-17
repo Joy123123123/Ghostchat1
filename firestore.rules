@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ইউজার প্রোফাইল — নিজের ডাটা নিজে লিখতে পারবে, সবাই পড়তে পারবে
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // চ্যাট মেসেজ — শুধু ঐ চ্যাট রুমের দুই ইউজার পড়তে/লিখতে পারবে
+    match /chats/{chatRoomId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in chatRoomId.split('_');
+      
+      match /messages/{messageId} {
+        allow read: if request.auth != null && 
+          request.auth.uid in chatRoomId.split('_');
+        allow create: if request.auth != null && 
+          request.auth.uid in chatRoomId.split('_') &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update: if request.auth != null && 
+          request.auth.uid in chatRoomId.split('_');
+        allow delete: if request.auth != null && 
+          request.resource.data.senderId == request.auth.uid;
+      }
+    }
+  }
+}

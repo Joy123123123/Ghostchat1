@@ -1,0 +1,31 @@
+name: ghostchat
+description: GhostChat — Anonymous real-time messenger
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.15.0
+  cloud_firestore: ^4.13.0
+
+  # UI & Utils
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  intl: ^0.19.0
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
