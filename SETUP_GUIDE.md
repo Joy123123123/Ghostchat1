@@ -138,10 +138,16 @@ base64 -w 0 android/app/google-services.json
 4. Workflow সফল হলে web app live হবে:
 
 ```
+https://<username>.github.io/<repository-name>/
+```
+
+এই repo-র current URL:
+
+```
 https://joy123123123.github.io/Ghostchat1/
 ```
 
-> নোট: `https://joy123123123.github.io/` এ না গিয়ে repo path সহ URL ব্যবহার করবেন।
+> নোট: root `https://<username>.github.io/` এ না গিয়ে repo path সহ URL ব্যবহার করবেন।
 
 ### Option C: Google Play Store
 1. https://play.google.com/console → Developer account ($25 one-time)
