@@ -11,6 +11,7 @@ permissions:
 env:
   JAVA_VERSION: "17"
   FLUTTER_CHANNEL: stable
+  ANDROID_GOOGLE_SERVICES_JSON_B64: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}
 
 jobs:
   source_zip:
@@ -24,7 +25,7 @@ jobs:
         run: |
           mkdir -p dist
           zip -r "dist/ghostchat-source-${{ github.run_number }}.zip" . \
-            -x ".git/*" "build/*" ".dart_tool/*"
+            -x ".git/*" "build/*" ".dart_tool/*" "node_modules/*" ".idea/*" ".vscode/*" ".env*" "android/key.properties" "*.jks" "*.keystore"
 
       - name: Upload source artifact
         uses: actions/upload-artifact@v4
@@ -40,48 +41,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check Firebase Android secret
-        id: check_secret
-        run: |
-          if [ -n "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" ]; then
-            echo "has_secret=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_secret=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Skip APK build when secret is missing
-        if: steps.check_secret.outputs.has_secret != 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 == ''
         run: echo "ANDROID_GOOGLE_SERVICES_JSON_B64 is missing. APK build skipped."
 
       - name: Setup Java
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Flutter
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - name: Generate flutter scaffolding and install deps
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         run: bash scripts/bootstrap_project.sh
 
       - name: Inject google-services.json
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         run: |
           mkdir -p android/app
-          echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" | base64 --decode > android/app/google-services.json
+          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON_B64" | base64 --decode > android/app/google-services.json
 
       - name: Build release APK
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         run: flutter build apk --release
 
       - name: Prepare APK artifact
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/ghostchat-app-${{ github.run_number }}.apk"
@@ -89,7 +81,7 @@ jobs:
           zip "ghostchat-android-${{ github.run_number }}.zip" "ghostchat-app-${{ github.run_number }}.apk"
 
       - name: Upload APK artifact
-        if: steps.check_secret.outputs.has_secret == 'true'
+        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
         uses: actions/upload-artifact@v4
         with:
           name: ghostchat-android-${{ github.run_number }}
