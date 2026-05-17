@@ -108,6 +108,24 @@ build/app/outputs/flutter-apk/app-release.apk
 ```
 এই ফাইলটি WhatsApp/Telegram-এ শেয়ার করুন। বন্ধুরা ইন্সটল করে ব্যবহার করতে পারবে।
 
+### Option A2: Pull Request করলেই GitHub থেকে APK/ZIP ডাউনলোড
+এই রিপোতে `PR Build Artifacts` GitHub Actions workflow যোগ করা হয়েছে।
+
+1. Repo Settings → **Secrets and variables** → **Actions** এ যান
+2. নতুন secret দিন: `ANDROID_GOOGLE_SERVICES_JSON_B64`
+3. আপনার local `android/app/google-services.json` ফাইলকে base64 করে secret এ দিন:
+
+```bash
+base64 -w 0 android/app/google-services.json
+```
+
+4. এখন PR open/update করলেই workflow চলবে
+5. PR → **Checks** / **Actions** → run খুলে **Artifacts** থেকে ডাউনলোড করুন:
+   - `ghostchat-source-<run_number>` (source zip)
+   - `ghostchat-android-<run_number>` (APK + ZIP, secret set থাকলে)
+
+> নোট: secret না দিলে APK job skip হবে, কিন্তু source zip artifact আসবে।
+
 ### Option B: Google Play Store
 1. https://play.google.com/console → Developer account ($25 one-time)
 2. `flutter build appbundle --release` দিয়ে `.aab` ফাইল বানান

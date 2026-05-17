@@ -1,0 +1,76 @@
+name: PR Build Artifacts
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source_zip:
+    name: Source ZIP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create source zip
+        run: |
+          mkdir -p dist
+          zip -r "dist/ghostchat-source-${{ github.run_number }}.zip" . \
+            -x ".git/*" "build/*" ".dart_tool/*"
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostchat-source-${{ github.run_number }}
+          path: dist/ghostchat-source-${{ github.run_number }}.zip
+          if-no-files-found: error
+
+  android_apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    if: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate flutter scaffolding and install deps
+        run: bash scripts/bootstrap_project.sh
+
+      - name: Inject google-services.json
+        run: |
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" | base64 --decode > android/app/google-services.json
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Prepare APK artifact
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/ghostchat-app-${{ github.run_number }}.apk"
+          cd dist
+          zip "ghostchat-android-${{ github.run_number }}.zip" "ghostchat-app-${{ github.run_number }}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostchat-android-${{ github.run_number }}
+          path: |
+            dist/ghostchat-app-${{ github.run_number }}.apk
+            dist/ghostchat-android-${{ github.run_number }}.zip
+          if-no-files-found: error
