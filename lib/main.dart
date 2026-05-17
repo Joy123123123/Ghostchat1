@@ -17,12 +17,20 @@ void main() async {
     ),
   );
 
-  await Firebase.initializeApp();
-  runApp(const GhostChatApp());
+  Object? firebaseInitError;
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    firebaseInitError = e;
+  }
+
+  runApp(GhostChatApp(firebaseInitError: firebaseInitError));
 }
 
 class GhostChatApp extends StatelessWidget {
-  const GhostChatApp({super.key});
+  final Object? firebaseInitError;
+
+  const GhostChatApp({super.key, this.firebaseInitError});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +38,9 @@ class GhostChatApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'GhostChat',
       theme: _buildTheme(),
-      home: const SplashRouter(),
+      home: firebaseInitError == null
+          ? const SplashRouter()
+          : FirebaseSetupRequiredScreen(error: firebaseInitError.toString()),
     );
   }
 
@@ -64,6 +74,60 @@ class GhostChatApp extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFA78BFA), width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+class FirebaseSetupRequiredScreen extends StatelessWidget {
+  final String error;
+
+  const FirebaseSetupRequiredScreen({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFA78BFA), size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Firebase setup required',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Run project bootstrap, then connect Firebase and re-run the app.',
+                style: TextStyle(color: Color(0xFF8B8AA8), height: 1.5),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161622),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2A2A3E)),
+                ),
+                child: Text(
+                  error,
+                  style: const TextStyle(color: Color(0xFF8B8AA8), fontSize: 12),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

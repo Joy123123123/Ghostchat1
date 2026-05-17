@@ -16,14 +16,25 @@ ghostchat/
 
 ---
 
+## ⚡ একদম দ্রুত রেডি করার শর্টকাট
+
+```bash
+cd /home/runner/work/Ghostchat1/Ghostchat1
+bash scripts/bootstrap_project.sh
+```
+
+এতে missing Flutter project scaffolding (android/ios/web/etc.) + dependency install auto হয়ে যাবে।
+
+---
+
 ## ধাপ ১: Flutter প্রজেক্ট তৈরি করুন
 
 ```bash
-flutter create ghostchat
-cd ghostchat
+cd /home/runner/work/Ghostchat1/Ghostchat1
+flutter create . --project-name ghostchat --org com.ghostchat.app
 ```
 
-এরপর উপরের সব ফাইল কপি করে সংশ্লিষ্ট ফোল্ডারে বসিয়ে দিন।
+এই কমান্ড missing Android/iOS/Web/Desktop project files জেনারেট করবে।
 
 ---
 
@@ -58,17 +69,7 @@ firebase login
 flutterfire configure
 ```
 
-এটি আপনার প্রজেক্টে `firebase_options.dart` ফাইল তৈরি করবে এবং `google-services.json` যোগ করবে।
-
-> ⚠️ **main.dart আপডেট করুন:**
-> `Firebase.initializeApp()` এর বদলে লিখুন:
-> ```dart
-> await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-> ```
-> এবং উপরে import যোগ করুন:
-> ```dart
-> import 'firebase_options.dart';
-> ```
+এটি আপনার প্রজেক্টে `firebase_options.dart` ফাইল তৈরি করবে এবং platform config (যেমন `google-services.json`) যোগ করবে।
 
 ---
 
@@ -140,7 +141,7 @@ build/app/outputs/flutter-apk/app-release.apk
 → `flutterfire configure` আবার রান করুন
 
 **Error: firebase_options.dart missing**
-→ main.dart থেকে `DefaultFirebaseOptions` লাইন সরিয়ে `Firebase.initializeApp()` ব্যবহার করুন
+→ `flutterfire configure` আবার চালান এবং generated files প্রজেক্টে রাখুন
 
 **App crash on start**
 → `flutter clean && flutter pub get && flutter run` রান করুন
