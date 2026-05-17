@@ -129,12 +129,26 @@ base64 -w 0 android/app/google-services.json
 
 > নোট: secret missing/invalid হলে APK job fail না করে skip হবে, কিন্তু source zip artifact আসবে।
 
-### Option B: Google Play Store
+### Option B: Web live via GitHub Pages
+এই repo-তে `Deploy Flutter Web to GitHub Pages` workflow যোগ করা হয়েছে।
+
+1. `main` branch-এ push করুন (বা Actions থেকে manual run দিন)
+2. Repo Settings → **Pages** এ যান
+3. **Build and deployment** source হিসেবে **GitHub Actions** সিলেক্ট করুন
+4. Workflow সফল হলে web app live হবে:
+
+```
+https://<username>.github.io/<repository-name>/
+```
+
+> নোট: root `https://<username>.github.io/` এ না গিয়ে repo path সহ URL ব্যবহার করবেন।
+
+### Option C: Google Play Store
 1. https://play.google.com/console → Developer account ($25 one-time)
 2. `flutter build appbundle --release` দিয়ে `.aab` ফাইল বানান
 3. Play Console-এ আপলোড করুন
 
-### Option C: Apple App Store
+### Option D: Apple App Store
 1. Apple Developer Program ($99/year)
 2. Mac কম্পিউটার প্রয়োজন
 3. `flutter build ipa --release`
