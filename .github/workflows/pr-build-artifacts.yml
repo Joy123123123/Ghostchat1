@@ -41,39 +41,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip APK build when secret is missing
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 == ''
-        run: echo "ANDROID_GOOGLE_SERVICES_JSON_B64 is missing. APK build skipped."
+      - name: Prepare google-services.json (base64 or raw JSON)
+        id: prepare_google_services
+        shell: bash
+        run: |
+          mkdir -p android/app
+
+          if [ -z "${ANDROID_GOOGLE_SERVICES_JSON_B64}" ]; then
+            echo "::warning::ANDROID_GOOGLE_SERVICES_JSON_B64 is missing. APK build will be skipped."
+            echo "apk_enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON_B64" | base64 --decode > android/app/google-services.json 2>/dev/null; then
+            echo "Detected base64-encoded google-services.json secret."
+          else
+            printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON_B64" > android/app/google-services.json
+            echo "Secret is not valid base64; treating it as raw JSON."
+          fi
+
+          if python3 -m json.tool android/app/google-services.json >/dev/null 2>&1; then
+            echo "google-services.json is valid."
+            echo "apk_enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::ANDROID_GOOGLE_SERVICES_JSON_B64 is neither valid base64 JSON nor raw JSON. APK build will be skipped."
+            rm -f android/app/google-services.json
+            echo "apk_enabled=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Java
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Flutter
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - name: Generate flutter scaffolding and install deps
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         run: bash scripts/bootstrap_project.sh
 
-      - name: Inject google-services.json
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
-        run: |
-          mkdir -p android/app
-          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON_B64" | base64 --decode > android/app/google-services.json
-
       - name: Build release APK
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         run: flutter build apk --release
 
       - name: Prepare APK artifact
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/ghostchat-app-${{ github.run_number }}.apk"
@@ -81,7 +99,7 @@ jobs:
           zip "ghostchat-android-${{ github.run_number }}.zip" "ghostchat-app-${{ github.run_number }}.apk"
 
       - name: Upload APK artifact
-        if: env.ANDROID_GOOGLE_SERVICES_JSON_B64 != ''
+        if: steps.prepare_google_services.outputs.apk_enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ghostchat-android-${{ github.run_number }}

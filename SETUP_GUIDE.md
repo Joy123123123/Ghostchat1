@@ -113,18 +113,21 @@ build/app/outputs/flutter-apk/app-release.apk
 
 1. Repo Settings → **Secrets and variables** → **Actions** এ যান
 2. নতুন secret দিন: `ANDROID_GOOGLE_SERVICES_JSON_B64`
-3. আপনার local `android/app/google-services.json` ফাইলকে base64 করে secret এ দিন:
+3. Secret এ আপনি **যেকোনো একটি** দিতে পারেন:
+   - `google-services.json` এর raw JSON content (copy-paste)
+   - অথবা base64-encoded content
+4. base64 দিতে চাইলে:
 
 ```bash
 base64 -w 0 android/app/google-services.json
 ```
 
-4. এখন PR open/update করলেই workflow চলবে
-5. PR → **Checks** / **Actions** → run খুলে **Artifacts** থেকে ডাউনলোড করুন:
+5. এখন PR open/update করলেই workflow চলবে
+6. PR → **Checks** / **Actions** → run খুলে **Artifacts** থেকে ডাউনলোড করুন:
    - `ghostchat-source-<run_number>` (source zip)
    - `ghostchat-android-<run_number>` (APK + ZIP, secret set থাকলে)
 
-> নোট: secret না দিলে APK job skip হবে, কিন্তু source zip artifact আসবে।
+> নোট: secret missing/invalid হলে APK job fail না করে skip হবে, কিন্তু source zip artifact আসবে।
 
 ### Option B: Google Play Store
 1. https://play.google.com/console → Developer account ($25 one-time)
